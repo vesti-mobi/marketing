@@ -43,6 +43,35 @@ html, body {
 }
 .meta { color: var(--text-dim); font-size: 12px; }
 
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: color .15s ease, border-color .15s ease, background .15s ease, transform .12s ease;
+}
+.logout-btn:hover {
+  color: #fff;
+  border-color: var(--accent);
+  background: rgba(255, 90, 138, 0.08);
+}
+.logout-btn:active { transform: translateY(1px); }
+.logout-btn svg { opacity: 0.85; }
+
 .container {
   max-width: 1280px;
   margin: 0 auto;

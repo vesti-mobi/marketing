@@ -1,3 +1,12 @@
+(function setupLogout() {
+  const btn = document.getElementById('btn-logout');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    try { sessionStorage.removeItem('vesti.auth.ok'); } catch (_) {}
+    window.location.replace('login.html');
+  });
+})();
+
 (async function () {
   try {
     const data = await DataLoader.load();
