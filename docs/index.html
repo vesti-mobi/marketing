@@ -18,69 +18,111 @@
     })();
   </script>
   <title>Vesti · Dashboard de Leads</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-  <script defer src="js/data-loader.js"></script>
-  <script defer src="js/filters.js"></script>
-  <script defer src="js/kpis.js"></script>
-  <script defer src="js/charts.js"></script>
-  <script defer src="js/main.js"></script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'brand-pink':   '#ff5a8a',
+            'brand-purple': '#7c5cff',
+            'brand-peach':  '#ff9b6a',
+            'surface':      '#12151d',
+            'surface-2':    '#181b24',
+          },
+          fontFamily: {
+            sans: ['-apple-system','BlinkMacSystemFont','"Segoe UI"','Roboto','"Helvetica Neue"','Arial','sans-serif'],
+          },
+          boxShadow: {
+            'glow-pink':   '0 10px 30px rgba(255,90,138,.28), inset 0 1px 0 rgba(255,255,255,.18)',
+            'glow-card':   '0 20px 60px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.05)',
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    html, body { background: #0b0d12; color: #e9ecf3; }
+    body {
+      background:
+        radial-gradient(ellipse at top left, #1a1430 0%, transparent 55%),
+        radial-gradient(ellipse at bottom right, #2a0f24 0%, transparent 55%),
+        #0b0d12;
+      min-height: 100vh;
+    }
+    .bg-grid {
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse at center, #000 30%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 80%);
+      pointer-events: none; z-index: 0;
+    }
+    .orb {
+      position: fixed; border-radius: 50%;
+      filter: blur(80px); opacity: 0.5; pointer-events: none; z-index: 0;
+      animation: drift 18s ease-in-out infinite;
+    }
+    .orb-1 { width:420px; height:420px; background: radial-gradient(circle,#ff5a8a 0%,transparent 70%); top:-120px; left:-80px; }
+    .orb-2 { width:520px; height:520px; background: radial-gradient(circle,#7c5cff 0%,transparent 70%); bottom:-160px; right:-120px; animation-delay:-6s; }
+    .orb-3 { width:320px; height:320px; background: radial-gradient(circle,#ff9b6a 0%,transparent 70%); top:40%; left:55%; opacity:0.3; animation-delay:-12s; }
+    @keyframes drift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(30px,-20px) scale(1.08); } }
+    #leads-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; opacity: 0.4; }
+
+    .card {
+      background: rgba(24,27,34,0.72);
+      backdrop-filter: blur(18px) saturate(140%);
+      -webkit-backdrop-filter: blur(18px) saturate(140%);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
+    }
+    .card-gradient-border { position: relative; }
+    .card-gradient-border::before {
+      content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px;
+      background: linear-gradient(135deg,#ff5a8a,transparent 35%,transparent 65%,#7c5cff);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+              mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      pointer-events: none; opacity: 0.55;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.16); }
+
+    /* Checkbox accent */
+    input[type="checkbox"] { accent-color: #ff5a8a; }
+
+    /* Recharts tooltip dark style helper */
+    .recharts-default-tooltip {
+      background: rgba(18,21,29,0.95) !important;
+      border: 1px solid rgba(255,255,255,0.08) !important;
+      border-radius: 10px !important;
+    }
+  </style>
+
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+  <script crossorigin src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
 </head>
-<body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="logo-dot"></span>
-      <h1>Vesti · Marketing</h1>
-    </div>
-    <div class="topbar-right">
-      <div class="meta" id="meta-info">Carregando…</div>
-      <button id="btn-logout" type="button" class="logout-btn" title="Encerrar sessão">
-        <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true">
-          <path d="M12 4H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h7M9 10h8m0 0-3-3m3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span>Sair</span>
-      </button>
-    </div>
-  </header>
+<body class="font-sans antialiased overflow-x-hidden">
+  <div class="bg-grid"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <canvas id="leads-canvas"></canvas>
 
-  <main class="container">
-    <section class="filters card">
-      <div class="filter-group">
-        <label for="filter-origem">Origem</label>
-        <select id="filter-origem"><option value="">Todas</option></select>
-      </div>
-      <div class="filter-group">
-        <label for="filter-perfil">Perfil</label>
-        <select id="filter-perfil"><option value="">Todos</option></select>
-      </div>
-      <button id="filter-clear" type="button" class="ghost">Limpar filtros</button>
-    </section>
+  <div id="root" class="relative z-10"></div>
 
-    <section class="sql-highlight card">
-      <div class="sql-main">
-        <span class="sql-label">SQL (Sales Qualified Leads)</span>
-        <span class="sql-value" id="sql-total">—</span>
-        <span class="sql-pct" id="sql-pct">—</span>
-      </div>
-      <div class="sql-sub" id="sql-breakdown">Starter + Pro + Qualificado (sem faixa)</div>
-    </section>
-
-    <section class="kpis" id="kpis"></section>
-
-    <section class="charts">
-      <div class="card chart-card">
-        <h2>Origem × SQLs</h2>
-        <div class="chart-wrap"><canvas id="chart-origem-sql"></canvas></div>
-      </div>
-      <div class="card chart-card">
-        <h2>Distribuição de Perfis</h2>
-        <div class="chart-wrap"><canvas id="chart-perfil-dist"></canvas></div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <span>Atualizado automaticamente todo dia às 04:30 BRT.</span>
-  </footer>
+  <script type="text/babel" data-presets="react" src="js/app.jsx"></script>
 </body>
 </html>
