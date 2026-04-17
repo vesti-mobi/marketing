@@ -139,13 +139,13 @@
       <header className="flex items-center justify-between px-6 lg:px-10 py-5 border-b border-white/5 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <span className="relative inline-grid place-items-center w-9 h-9">
-            <span className="w-4 h-4 rounded-full shadow-[0_0_22px_rgba(255,90,138,.55),0_0_40px_rgba(124,92,255,.45)]"
-                  style={{ background: "linear-gradient(135deg,#ff5a8a,#7c5cff)" }} />
+            <span className="w-4 h-4 rounded-full shadow-[0_0_22px_rgba(106,82,179,.6),0_0_40px_rgba(99,193,155,.45)]"
+                  style={{ background: "linear-gradient(135deg,#6A52B3,#63C19B)" }} />
             <span className="absolute inset-0 rounded-full border border-white/10 animate-[pulse_2.6s_ease-out_infinite]" />
           </span>
           <div className="flex flex-col leading-tight">
             <span className="text-[17px] font-bold tracking-wide"
-                  style={{ background:"linear-gradient(120deg,#fff 0%,#ffd4e1 60%,#cfc0ff 100%)",
+                  style={{ background:"linear-gradient(120deg,#fff 0%,#cfe8db 60%,#c0b6e5 100%)",
                            WebkitBackgroundClip:"text", backgroundClip:"text", color:"transparent" }}>
               Vesti
             </span>
@@ -213,7 +213,7 @@
   function CentralKpi({ total, sql, sqlPct }) {
     return (
       <div className="card card-gradient-border p-6 lg:p-7 flex flex-col justify-between min-h-[220px]"
-           style={{ background: "linear-gradient(145deg, rgba(255,90,138,.10), rgba(124,92,255,.10) 60%, rgba(24,27,34,.72))" }}>
+           style={{ background: "linear-gradient(145deg, rgba(106,82,179,.14), rgba(99,193,155,.12) 60%, rgba(24,27,34,.72))" }}>
         <div>
           <span className="text-[11px] uppercase tracking-[1.6px] text-slate-300/90">Total de Leads</span>
           <div className="mt-2 flex items-baseline gap-3">
@@ -258,7 +258,7 @@
   }
 
   function KpiSection({ total, sql, sqlPct, originCounts, origens }) {
-    const palette = ["#ff5a8a","#7c5cff","#ff9b6a","#47c8d4","#b877ff","#ff6fbb"];
+    const palette = ["#6A52B3","#63C19B","#549E86","#6473A0","#655AA2","#4A467A"];
     const sortedOrigens = [...origens].sort((a, b) => (originCounts[b] || 0) - (originCounts[a] || 0));
     return (
       <section className="relative z-0 grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -295,12 +295,12 @@
           <BarChart data={data} margin={{ top: 12, right: 12, left: 0, bottom: 6 }}>
             <defs>
               <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"  stopColor="#ff5a8a" stopOpacity={1}/>
-                <stop offset="100%" stopColor="#7c5cff" stopOpacity={0.9}/>
+                <stop offset="0%"  stopColor="#6A52B3" stopOpacity={1}/>
+                <stop offset="100%" stopColor="#63C19B" stopOpacity={0.9}/>
               </linearGradient>
               <linearGradient id="barGradDim" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"  stopColor="#ff5a8a" stopOpacity={0.35}/>
-                <stop offset="100%" stopColor="#7c5cff" stopOpacity={0.25}/>
+                <stop offset="0%"  stopColor="#6A52B3" stopOpacity={0.35}/>
+                <stop offset="100%" stopColor="#63C19B" stopOpacity={0.25}/>
               </linearGradient>
             </defs>
             <CartesianGrid stroke={GRID_STROKE} vertical={false} />
@@ -308,10 +308,10 @@
                    interval={0} angle={-15} dy={8} height={50}/>
             <YAxis allowDecimals={false} tick={AXIS_STYLE} tickLine={false} axisLine={{ stroke: GRID_STROKE }}/>
             <Tooltip
-              cursor={{ fill: "rgba(255,90,138,0.08)" }}
+              cursor={{ fill: "rgba(106,82,179,0.10)" }}
               contentStyle={{ background: "rgba(18,21,29,0.96)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10 }}
               labelStyle={{ color: "#e9ecf3" }}
-              itemStyle={{ color: "#ff5a8a" }}
+              itemStyle={{ color: "#6A52B3" }}
               formatter={(v) => [fmtNumber(v), "SQLs"]}
             />
             <Bar
@@ -355,22 +355,22 @@
           >
             <defs>
               <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"  stopColor="#ff5a8a" stopOpacity={0.55}/>
-                <stop offset="100%" stopColor="#7c5cff" stopOpacity={0.02}/>
+                <stop offset="0%"  stopColor="#6A52B3" stopOpacity={0.55}/>
+                <stop offset="100%" stopColor="#63C19B" stopOpacity={0.05}/>
               </linearGradient>
             </defs>
             <CartesianGrid stroke={GRID_STROKE} vertical={false}/>
             <XAxis dataKey="label" tick={AXIS_STYLE} tickLine={false} axisLine={{ stroke: GRID_STROKE }}/>
             <YAxis allowDecimals={false} tick={AXIS_STYLE} tickLine={false} axisLine={{ stroke: GRID_STROKE }}/>
             <Tooltip
-              cursor={{ stroke: "rgba(255,90,138,0.3)", strokeWidth: 1 }}
+              cursor={{ stroke: "rgba(106,82,179,0.35)", strokeWidth: 1 }}
               contentStyle={{ background: "rgba(18,21,29,0.96)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10 }}
               labelStyle={{ color: "#e9ecf3" }}
-              itemStyle={{ color: "#ff5a8a" }}
+              itemStyle={{ color: "#6A52B3" }}
               formatter={(v) => [fmtNumber(v), "Leads"]}
               labelFormatter={(l) => `${granularity === "week" ? "Semana " : ""}${l}`}
             />
-            <Area type="monotone" dataKey="leads" stroke="#ff5a8a" strokeWidth={2.2}
+            <Area type="monotone" dataKey="leads" stroke="#6A52B3" strokeWidth={2.2}
                   fill="url(#areaGrad)" activeDot={{ r: 5, stroke: "#fff", strokeWidth: 1.5 }}/>
           </AreaChart>
         </ResponsiveContainer>
@@ -409,7 +409,7 @@
           x: Math.random() * w, y: Math.random() * h,
           vx: (Math.random() - 0.5) * 0.25, vy: (Math.random() - 0.5) * 0.25,
           r: Math.random() * 1.6 + 0.6,
-          hue: Math.random() < 0.5 ? "#ff5a8a" : "#7c5cff",
+          hue: Math.random() < 0.5 ? "#6A52B3" : "#63C19B",
         });
       }
     };
@@ -424,7 +424,7 @@
           const d = Math.hypot(a.x - b.x, a.y - b.y);
           if (d < LINK_DIST) {
             const alpha = (1 - d / LINK_DIST) * 0.3;
-            ctx.strokeStyle = `rgba(180,150,255,${alpha.toFixed(3)})`;
+            ctx.strokeStyle = `rgba(155,180,220,${alpha.toFixed(3)})`;
             ctx.lineWidth = 0.6;
             ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
           }

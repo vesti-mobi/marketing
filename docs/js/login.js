@@ -96,7 +96,7 @@
           vx: (Math.random() - 0.5) * 0.25,
           vy: (Math.random() - 0.5) * 0.25,
           r: Math.random() * 1.6 + 0.6,
-          hue: Math.random() < 0.5 ? "#ff5a8a" : "#7c5cff",
+          hue: Math.random() < 0.5 ? "#6A52B3" : "#63C19B",
         });
       }
     };
@@ -117,7 +117,7 @@
           const d  = Math.hypot(dx, dy);
           if (d < LINK_DIST) {
             const alpha = (1 - d / LINK_DIST) * 0.35;
-            ctx.strokeStyle = `rgba(180,150,255,${alpha.toFixed(3)})`;
+            ctx.strokeStyle = `rgba(155,180,220,${alpha.toFixed(3)})`;
             ctx.lineWidth = 0.6;
             ctx.beginPath();
             ctx.moveTo(a.x, a.y);

@@ -6,12 +6,12 @@
   --border-strong: rgba(255, 255, 255, 0.16);
   --text: #e9ecf3;
   --text-dim: #8b93a7;
-  --accent: #ff5a8a;
-  --accent-2: #7c5cff;
-  --accent-glow: rgba(255, 90, 138, 0.45);
-  --accent-glow-2: rgba(124, 92, 255, 0.45);
+  --accent: #6A52B3;
+  --accent-2: #63C19B;
+  --accent-glow: rgba(106, 82, 179, 0.48);
+  --accent-glow-2: rgba(99, 193, 155, 0.45);
   --danger: #ff4f6b;
-  --ok: #2ecc71;
+  --ok: #63C19B;
   --radius: 18px;
 }
 
@@ -21,8 +21,8 @@ html, body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background: radial-gradient(ellipse at top left, #1a1430 0%, transparent 55%),
-              radial-gradient(ellipse at bottom right, #2a0f24 0%, transparent 55%),
+  background: radial-gradient(ellipse at top left, #2B0C55 0%, transparent 55%),
+              radial-gradient(ellipse at bottom right, #1a1635 0%, transparent 55%),
               var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -63,7 +63,7 @@ html, body {
 }
 .orb-3 {
   width: 320px; height: 320px;
-  background: radial-gradient(circle, #ff9b6a 0%, transparent 70%);
+  background: radial-gradient(circle, #549E86 0%, transparent 70%);
   top: 40%; left: 55%;
   opacity: 0.35;
   animation-delay: -12s;
@@ -156,7 +156,7 @@ html, body {
 .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
 .brand-name {
   font-weight: 700; font-size: 18px; letter-spacing: 0.3px;
-  background: linear-gradient(120deg, #fff 0%, #ffd4e1 60%, #cfc0ff 100%);
+  background: linear-gradient(120deg, #fff 0%, #cfe8db 60%, #c0b6e5 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .brand-sub {
@@ -193,8 +193,8 @@ html, body {
 }
 .field:focus-within {
   border-color: var(--accent);
-  background: rgba(255, 90, 138, 0.06);
-  box-shadow: 0 0 0 4px rgba(255, 90, 138, 0.12), 0 0 20px rgba(255, 90, 138, 0.14);
+  background: rgba(106, 82, 179, 0.08);
+  box-shadow: 0 0 0 4px rgba(106, 82, 179, 0.16), 0 0 20px rgba(106, 82, 179, 0.18);
 }
 .field-icon {
   display: inline-flex;
@@ -247,8 +247,8 @@ html, body {
   box-shadow: 0 0 0 4px rgba(255, 79, 107, 0.10);
 }
 .field.success {
-  border-color: rgba(46, 204, 113, 0.55);
-  background: rgba(46, 204, 113, 0.06);
+  border-color: rgba(99, 193, 155, 0.55);
+  background: rgba(99, 193, 155, 0.08);
 }
 
 @keyframes shake {
@@ -281,12 +281,12 @@ html, body {
   letter-spacing: 0.3px;
   color: #fff;
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-  box-shadow: 0 10px 30px rgba(255, 90, 138, 0.28), inset 0 1px 0 rgba(255,255,255,0.18);
+  box-shadow: 0 10px 30px rgba(106, 82, 179, 0.32), inset 0 1px 0 rgba(255,255,255,0.18);
   transition: transform .12s ease, box-shadow .2s ease, opacity .2s ease, filter .2s ease;
 }
 .btn-enter:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 14px 34px rgba(255, 90, 138, 0.38), inset 0 1px 0 rgba(255,255,255,0.22);
+  box-shadow: 0 14px 34px rgba(106, 82, 179, 0.44), inset 0 1px 0 rgba(255,255,255,0.22);
 }
 .btn-enter:active:not(:disabled) { transform: translateY(0); }
 .btn-enter:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.2); }
@@ -304,7 +304,7 @@ html, body {
 .login-foot .dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: var(--ok);
-  box-shadow: 0 0 8px rgba(46, 204, 113, 0.6);
+  box-shadow: 0 0 8px rgba(99, 193, 155, 0.6);
   animation: blink 2s ease-in-out infinite;
 }
 @keyframes blink {
