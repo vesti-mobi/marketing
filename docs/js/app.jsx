@@ -20,6 +20,14 @@
   ];
   const MONTH_LABELS_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
+  const ORIGEM_ALIASES = {
+    "[SALES] Chanel": "Mídia paga",
+    "[SALES]Chanel": "Mídia paga",
+  };
+  function canonicalOrigem(o) {
+    return ORIGEM_ALIASES[o] ?? o;
+  }
+
   // --------------------------- utils ---------------------------
   function parseLeadDate(s) {
     if (!s) return null;
@@ -257,6 +265,28 @@
     );
   }
 
+  function PerfilSqlCard({ name, value, pct, accent }) {
+    return (
+      <div className="card p-4 flex flex-col justify-between min-h-[104px]">
+        <span className="text-[10.5px] uppercase tracking-[1.3px] text-slate-500" title={name}>
+          {name}
+        </span>
+        <div className="mt-1.5">
+          <span className="text-3xl font-bold text-slate-900 leading-none">{fmtNumber(value)}</span>
+        </div>
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <div className="h-1 flex-1 rounded-full bg-[#2B0C55]/10 overflow-hidden">
+            <div className="h-full rounded-full"
+                 style={{ width: `${Math.min(100, pct)}%`, background: accent }} />
+          </div>
+          <span className="text-[11px] font-medium text-slate-600 whitespace-nowrap">
+            {pct.toFixed(1).replace(".", ",")}% dos SQLs
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   function KpiSection({ total, sql, sqlPct, originCounts, origens }) {
     const palette = ["#6A52B3","#63C19B","#549E86","#6473A0","#655AA2","#4A467A"];
     const sortedOrigens = [...origens].sort((a, b) => (originCounts[b] || 0) - (originCounts[a] || 0));
@@ -477,9 +507,23 @@
         .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
         .then(json => {
           const leads = (json.leads || []).map(l => ({
-            ...l, _d: parseLeadDate(l.data),
+            ...l,
+            origem: canonicalOrigem(l.origem),
+            _d: parseLeadDate(l.data),
           }));
-          setRaw({ ...json, leads });
+          const origens = [...new Set((json.origens || []).map(canonicalOrigem))]
+            .sort((a, b) => a.localeCompare(b, "pt-BR"));
+          const origem_counts = {};
+          for (const [k, v] of Object.entries(json.origem_counts || {})) {
+            const ck = canonicalOrigem(k);
+            origem_counts[ck] = (origem_counts[ck] || 0) + v;
+          }
+          const sql_by_origem = {};
+          for (const [k, v] of Object.entries(json.sql_by_origem || {})) {
+            const ck = canonicalOrigem(k);
+            sql_by_origem[ck] = (sql_by_origem[ck] || 0) + v;
+          }
+          setRaw({ ...json, leads, origens, origem_counts, sql_by_origem });
         })
         .catch(e => setError(e.message || String(e)));
     }, []);
@@ -520,6 +564,14 @@
     const totalLeads = filtered.length;
     const sqlLeads   = useMemo(() => filtered.filter(isSqlLead).length, [filtered]);
     const sqlPct     = totalLeads > 0 ? (sqlLeads / totalLeads) * 100 : 0;
+
+    const sqlBreakdown = useMemo(() => {
+      const counts = { "Pro": 0, "Starter": 0, "Qualificado (Sem Faixa)": 0 };
+      for (const l of filtered) {
+        if (counts[l.perfil] !== undefined) counts[l.perfil]++;
+      }
+      return counts;
+    }, [filtered]);
 
     const origensAll = raw?.origens || [];
     const perfisAll  = raw?.perfis  || [];
@@ -692,6 +744,28 @@
                 activeOrigins={origemSel}
               />
             </ChartCard>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+              <PerfilSqlCard
+                name="Pro"
+                value={sqlBreakdown["Pro"]}
+                pct={sqlLeads > 0 ? (sqlBreakdown["Pro"] / sqlLeads) * 100 : 0}
+                accent="#549E86"
+              />
+              <PerfilSqlCard
+                name="Starter"
+                value={sqlBreakdown["Starter"]}
+                pct={sqlLeads > 0 ? (sqlBreakdown["Starter"] / sqlLeads) * 100 : 0}
+                accent="#63C19B"
+              />
+              <PerfilSqlCard
+                name="Qualificado (Sem Faixa)"
+                value={sqlBreakdown["Qualificado (Sem Faixa)"]}
+                pct={sqlLeads > 0 ? (sqlBreakdown["Qualificado (Sem Faixa)"] / sqlLeads) * 100 : 0}
+                accent="#6A52B3"
+              />
+            </div>
+
             <ChartCard title="Evolução de Leads" subtitle={trendSubtitle}>
               <TrendChart
                 data={trendData}
