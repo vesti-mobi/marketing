@@ -626,17 +626,34 @@
       return m;
     }, [filtered, visibleOrigens]);
 
-    // Chart 1: SQLs by origin
+    // Chart 1: SQLs by origin — mostra todas as origens sempre (para permitir
+    // alternar o filtro entre elas) e ignora o filtro de origem na contagem.
+    const filteredIgnoringOrigem = useMemo(() => {
+      if (!raw) return [];
+      const ySel = Array.isArray(year) ? year : [];
+      return raw.leads.filter(l => {
+        if (perfilSel.length > 0 && !perfilSel.includes(l.perfil)) return false;
+        if (l._d) {
+          if (ySel.length  > 0 && !ySel.includes(l._d.getFullYear()))      return false;
+          if (month.length > 0 && !month.includes(l._d.getMonth() + 1))    return false;
+          if (weekSel != null && month.length === 1 && weekOfMonth(l._d) !== weekSel) return false;
+        } else if (ySel.length > 0 || month.length > 0) {
+          return false;
+        }
+        return true;
+      });
+    }, [raw, perfilSel, year, month, weekSel]);
+
     const sqlsByOriginData = useMemo(() => {
       const m = {};
-      for (const o of visibleOrigens) m[o] = 0;
-      for (const l of filtered) {
+      for (const o of origensAll) m[o] = 0;
+      for (const l of filteredIgnoringOrigem) {
         if (isSqlLead(l) && m[l.origem] !== undefined) m[l.origem]++;
       }
       return Object.entries(m)
         .map(([origem, sqls]) => ({ origem, sqls }))
         .sort((a,b) => b.sqls - a.sqls);
-    }, [filtered, visibleOrigens]);
+    }, [filteredIgnoringOrigem, origensAll]);
 
     // Chart 2: trend over time — granularity depends on filters
     const { trendData, trendGranularity, trendSubtitle } = useMemo(() => {
