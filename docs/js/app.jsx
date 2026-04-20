@@ -365,10 +365,25 @@
     );
   }
 
-  function TrendChart({ data, granularity, onPointClick }) {
+  function TrendChart({ data, granularity, onPointClick, selectedWeek }) {
     if (data.length === 0) {
       return <div className="h-[320px] grid place-items-center text-slate-500 text-sm">Sem dados para o filtro atual.</div>;
     }
+    const makeDot = (baseColor) => (props) => {
+      const { cx, cy, payload, index } = props;
+      if (cx == null || cy == null) return null;
+      const isSel = granularity === "week" && selectedWeek != null && payload && payload.week === selectedWeek;
+      return (
+        <circle
+          key={`d-${index}`}
+          cx={cx} cy={cy}
+          r={isSel ? 7 : 3}
+          fill={isSel ? "#E91E63" : baseColor}
+          stroke={isSel ? "#fff" : baseColor}
+          strokeWidth={isSel ? 2 : 1}
+        />
+      );
+    };
     return (
       <div className="h-[340px]">
         <ResponsiveContainer width="100%" height="100%">
@@ -379,7 +394,7 @@
               if (!onPointClick || !e || !e.activePayload || !e.activePayload[0]) return;
               onPointClick(e.activePayload[0].payload);
             }}
-            style={{ cursor: onPointClick && granularity !== "week" ? "pointer" : "default" }}
+            style={{ cursor: onPointClick ? "pointer" : "default" }}
           >
             <CartesianGrid stroke={GRID_STROKE} vertical={false}/>
             <XAxis dataKey="label" tick={AXIS_STYLE} tickLine={false} axisLine={{ stroke: GRID_STROKE }}/>
@@ -399,7 +414,7 @@
             />
             <Line type="monotone" dataKey="leads" name="Leads totais"
                   stroke="#6A52B3" strokeWidth={2.4}
-                  dot={{ r: 3, fill: "#6A52B3", stroke: "#6A52B3" }}
+                  dot={makeDot("#6A52B3")}
                   activeDot={{ r: 5, stroke: "#fff", strokeWidth: 1.5 }}>
               <LabelList
                 dataKey="leads"
@@ -412,7 +427,7 @@
             </Line>
             <Line type="monotone" dataKey="sqls" name="SQLs"
                   stroke="#549E86" strokeWidth={2.4}
-                  dot={{ r: 3, fill: "#549E86", stroke: "#549E86" }}
+                  dot={makeDot("#549E86")}
                   activeDot={{ r: 5, stroke: "#fff", strokeWidth: 1.5 }}>
               <LabelList
                 dataKey="sqls"
@@ -500,6 +515,7 @@
     const [perfilSel, setPerfilSel] = useState([]);
     const [year, setYear]           = useState(null); // null = não inicializado; [] = "Todos"
     const [month, setMonth]         = useState([]);
+    const [weekSel, setWeekSel]     = useState(null); // 1..5 ou null
 
     // Load + parse data
     useEffect(() => {
@@ -543,8 +559,8 @@
       if (year === null && years.length > 0) setYear([years[0]]);
     }, [years, year]);
 
-    // Filtered leads
-    const filtered = useMemo(() => {
+    // Filtered leads (sem filtro de semana — usado pelo gráfico de evolução)
+    const baseFiltered = useMemo(() => {
       if (!raw) return [];
       const ySel = Array.isArray(year) ? year : [];
       return raw.leads.filter(l => {
@@ -559,6 +575,17 @@
         return true;
       });
     }, [raw, origemSel, perfilSel, year, month]);
+
+    // Reset seleção de semana se deixar de ter exatamente 1 mês no filtro
+    useEffect(() => {
+      if (month.length !== 1 && weekSel != null) setWeekSel(null);
+    }, [month, weekSel]);
+
+    // Filtered final (aplica weekSel quando há 1 mês selecionado)
+    const filtered = useMemo(() => {
+      if (weekSel == null || month.length !== 1) return baseFiltered;
+      return baseFiltered.filter(l => l._d && weekOfMonth(l._d) === weekSel);
+    }, [baseFiltered, weekSel, month]);
 
     // KPIs
     const totalLeads = filtered.length;
@@ -607,7 +634,7 @@
       // Weekly view — exatamente 1 mês selecionado
       if (month.length === 1) {
         const buckets = Array(5).fill(null).map(() => ({ leads: 0, sqls: 0 }));
-        for (const l of filtered) {
+        for (const l of baseFiltered) {
           if (!l._d) continue;
           const w = weekOfMonth(l._d);
           if (w >= 1 && w <= 5) {
@@ -616,17 +643,18 @@
           }
         }
         const yearLabel = ySel.length === 1 ? ` · ${ySel[0]}` : "";
+        const selLabel = weekSel != null ? ` · Semana ${weekSel} selecionada` : "";
         return {
-          trendData: buckets.map((b,i) => ({ label: `S${i+1}`, leads: b.leads, sqls: b.sqls })),
+          trendData: buckets.map((b,i) => ({ label: `S${i+1}`, week: i+1, leads: b.leads, sqls: b.sqls })),
           trendGranularity: "week",
-          trendSubtitle: `${MONTH_LABELS_FULL[month[0]-1]}${yearLabel} · por semana`,
+          trendSubtitle: `${MONTH_LABELS_FULL[month[0]-1]}${yearLabel} · por semana${selLabel}`,
         };
       }
 
       // Monthly view — exatamente 1 ano selecionado e nenhum mês específico
       if (ySel.length === 1 && month.length === 0) {
         const buckets = Array(12).fill(null).map(() => ({ leads: 0, sqls: 0 }));
-        for (const l of filtered) {
+        for (const l of baseFiltered) {
           if (!l._d) continue;
           const mo = l._d.getMonth();
           buckets[mo].leads++;
@@ -643,7 +671,7 @@
 
       // Year-month view — qualquer outro caso
       const m = new Map();
-      for (const l of filtered) {
+      for (const l of baseFiltered) {
         if (!l._d) continue;
         const key = `${l._d.getFullYear()}-${String(l._d.getMonth()+1).padStart(2,"0")}`;
         const b = m.get(key) || { leads: 0, sqls: 0 };
@@ -660,7 +688,7 @@
         trendGranularity: "year-month",
         trendSubtitle: ySel.length === 0 ? "Todos os períodos · por mês" : `${ySel.join(", ")} · por mês`,
       };
-    }, [filtered, year, month, raw]);
+    }, [baseFiltered, year, month, weekSel, raw]);
 
     // --- cross-filter handlers ---
     const toggleOrigem = useCallback((o) => {
@@ -670,7 +698,10 @@
 
     const handleTrendClick = useCallback((payload) => {
       if (!payload) return;
-      if (trendGranularity === "week") return; // já na menor granularidade
+      if (trendGranularity === "week" && payload.week != null) {
+        setWeekSel(curr => curr === payload.week ? null : payload.week);
+        return;
+      }
       if (trendGranularity === "month-of-year" && payload.month != null) {
         setMonth(m => m.includes(payload.month) ? m.filter(x => x !== payload.month) : [...m, payload.month]);
         return;
@@ -685,6 +716,7 @@
     const clear = useCallback(() => {
       setOrigemSel([]); setPerfilSel([]);
       setYear([]);      setMonth([]);
+      setWeekSel(null);
     }, []);
 
     // --------------------------- render ---------------------------
@@ -771,6 +803,7 @@
                 data={trendData}
                 granularity={trendGranularity}
                 onPointClick={handleTrendClick}
+                selectedWeek={weekSel}
               />
             </ChartCard>
           </section>
