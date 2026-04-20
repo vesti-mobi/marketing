@@ -40,8 +40,35 @@
     return isNaN(d.getTime()) ? null : d;
   }
 
+  // Regra calendário: semana vai de domingo a sábado.
+  // Semana 1 do mês = do dia 1º até o primeiro sábado (inclusive), mesmo que parcial.
   function weekOfMonth(d) {
-    return Math.floor((d.getDate() - 1) / 7) + 1;
+    const day = d.getDate();
+    const firstDow = new Date(d.getFullYear(), d.getMonth(), 1).getDay(); // 0=Dom..6=Sáb
+    const firstSatDay = 1 + ((6 - firstDow + 7) % 7); // dia 1..7
+    if (day <= firstSatDay) return 1;
+    return 1 + Math.ceil((day - firstSatDay) / 7);
+  }
+
+  function weeksInMonth(year, monthIdx) {
+    const lastDay = new Date(year, monthIdx + 1, 0).getDate();
+    return weekOfMonth(new Date(year, monthIdx, lastDay));
+  }
+
+  function weekRange(year, monthIdx, weekNum) {
+    const firstDow = new Date(year, monthIdx, 1).getDay();
+    const firstSatDay = 1 + ((6 - firstDow + 7) % 7);
+    const lastDay = new Date(year, monthIdx + 1, 0).getDate();
+    let start, end;
+    if (weekNum === 1) {
+      start = 1;
+      end = Math.min(firstSatDay, lastDay);
+    } else {
+      start = firstSatDay + 1 + (weekNum - 2) * 7;
+      end = Math.min(start + 6, lastDay);
+    }
+    if (start > lastDay) return null;
+    return `${String(start).padStart(2,"0")}–${String(end).padStart(2,"0")}`;
   }
 
   function fmtNumber(n) {
@@ -416,7 +443,14 @@
               contentStyle={{ background: "rgba(255,255,255,0.96)", border: "1px solid rgba(43,12,85,0.1)", borderRadius: 10 }}
               labelStyle={{ color: "#1a1635" }}
               formatter={(v, name) => [fmtNumber(v), name]}
-              labelFormatter={(l) => `${granularity === "week" ? "Semana " : ""}${l}`}
+              labelFormatter={(l, payload) => {
+                if (granularity === "week") {
+                  const wNum = String(l).replace(/^S/, "");
+                  const range = payload && payload[0] && payload[0].payload && payload[0].payload.range;
+                  return range ? `Semana ${wNum} (${range})` : `Semana ${wNum}`;
+                }
+                return l;
+              }}
             />
             <Legend
               verticalAlign="top"
@@ -662,11 +696,28 @@
 
       // Weekly view — exatamente 1 mês selecionado
       if (month.length === 1) {
-        const buckets = Array(5).fill(null).map(() => ({ leads: 0, sqls: 0 }));
+        const monthIdx = month[0] - 1;
+        // Número de semanas do período exibido. Se houver ano fixo, usa ele;
+        // senão, pega o máximo entre os anos presentes nos dados filtrados.
+        let numWeeks = 0;
+        let calYear = null;
+        if (ySel.length === 1) {
+          calYear = ySel[0];
+          numWeeks = weeksInMonth(calYear, monthIdx);
+        } else {
+          const yearsPresent = new Set();
+          for (const l of baseFiltered) if (l._d && l._d.getMonth() === monthIdx) yearsPresent.add(l._d.getFullYear());
+          for (const y of yearsPresent) {
+            const n = weeksInMonth(y, monthIdx);
+            if (n > numWeeks) { numWeeks = n; calYear = y; }
+          }
+          if (numWeeks === 0) { calYear = new Date().getFullYear(); numWeeks = weeksInMonth(calYear, monthIdx); }
+        }
+        const buckets = Array(numWeeks).fill(null).map(() => ({ leads: 0, sqls: 0 }));
         for (const l of baseFiltered) {
           if (!l._d) continue;
           const w = weekOfMonth(l._d);
-          if (w >= 1 && w <= 5) {
+          if (w >= 1 && w <= numWeeks) {
             buckets[w-1].leads++;
             if (isSqlLead(l)) buckets[w-1].sqls++;
           }
@@ -674,7 +725,13 @@
         const yearLabel = ySel.length === 1 ? ` · ${ySel[0]}` : "";
         const selLabel = weekSel != null ? ` · Semana ${weekSel} selecionada` : "";
         return {
-          trendData: buckets.map((b,i) => ({ label: `S${i+1}`, week: i+1, leads: b.leads, sqls: b.sqls })),
+          trendData: buckets.map((b,i) => ({
+            label: `S${i+1}`,
+            week: i+1,
+            range: weekRange(calYear, monthIdx, i+1),
+            leads: b.leads,
+            sqls: b.sqls,
+          })),
           trendGranularity: "week",
           trendSubtitle: `${MONTH_LABELS_FULL[month[0]-1]}${yearLabel} · por semana${selLabel}`,
         };
