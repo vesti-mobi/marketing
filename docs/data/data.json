@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-04-20T17:40:24.076Z",
+  "generated_at": "2026-04-21T09:11:03.137Z",
   "sheet_id": "1zNRw8zfoASVlO2EhR56sldTCy4IXRCLKfauU1ROChCE",
   "sheet_tab": "Leads",
-  "total_leads": 786,
+  "total_leads": 795,
   "total_sql": 82,
-  "sql_pct": 10.43,
+  "sql_pct": 10.31,
   "perfis": [
     "Pro",
     "Starter",
@@ -24,19 +24,19 @@
   ],
   "perfil_counts": {
     "Qualificação incompleta": 538,
-    "Multimarca": 64,
+    "Multimarca": 69,
     "Qualificado (Sem Faixa)": 3,
-    "Starter": 62,
+    "Starter": 61,
     "Suporte": 47,
-    "Pro": 17,
-    "Desqualificado": 45,
-    "Em atendimento": 10
+    "Pro": 18,
+    "Em atendimento": 14,
+    "Desqualificado": 45
   },
   "origem_counts": {
-    "[SALES] Chanel": 47,
-    "Site": 192,
+    "[SALES] Chanel": 49,
+    "Site": 197,
     "Bio Instagram": 28,
-    "Orgânico": 52,
+    "Orgânico": 54,
     "Evento Denim": 467
   },
   "sql_by_origem": {
@@ -245,7 +245,7 @@
     {
       "data": "24/03/2026 18:34:17",
       "origem": "Site",
-      "perfil": "Starter"
+      "perfil": "Em atendimento"
     },
     {
       "data": "24/03/2026 21:12:56",
@@ -3981,6 +3981,51 @@
       "data": "20/04/2026 14:31:01",
       "origem": "Bio Instagram",
       "perfil": "Desqualificado"
+    },
+    {
+      "data": "20/04/2026 14:48:30",
+      "origem": "Site",
+      "perfil": "Pro"
+    },
+    {
+      "data": "20/04/2026 16:09:02",
+      "origem": "Site",
+      "perfil": "Multimarca"
+    },
+    {
+      "data": "20/04/2026 16:23:15",
+      "origem": "[SALES] Chanel",
+      "perfil": "Em atendimento"
+    },
+    {
+      "data": "20/04/2026 16:46:08",
+      "origem": "Orgânico",
+      "perfil": "Multimarca"
+    },
+    {
+      "data": "20/04/2026 19:30:43",
+      "origem": "Orgânico",
+      "perfil": "Multimarca"
+    },
+    {
+      "data": "20/04/2026 21:37:15",
+      "origem": "Site",
+      "perfil": "Multimarca"
+    },
+    {
+      "data": "20/04/2026 22:17:37",
+      "origem": "[SALES] Chanel",
+      "perfil": "Em atendimento"
+    },
+    {
+      "data": "20/04/2026 22:26:36",
+      "origem": "Site",
+      "perfil": "Em atendimento"
+    },
+    {
+      "data": "21/04/2026 01:06:27",
+      "origem": "Site",
+      "perfil": "Multimarca"
     }
   ]
 }
