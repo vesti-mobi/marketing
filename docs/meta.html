@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>
+    (function () {
+      var AUTH_KEY = "vesti.auth.ok";
+      var TTL = 1000 * 60 * 60 * 8;
+      try {
+        var raw = sessionStorage.getItem(AUTH_KEY);
+        if (raw) {
+          var data = JSON.parse(raw);
+          if (data && data.ts && Date.now() - data.ts < TTL) return;
+        }
+      } catch (e) { /* ignore */ }
+      window.location.replace("login.html");
+    })();
+  </script>
+  <title>Vesti · Metas Mensais</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'brand-pink':   '#6A52B3',
+            'brand-purple': '#63C19B',
+            'brand-peach':  '#549E86',
+          },
+          fontFamily: {
+            sans: ['-apple-system','BlinkMacSystemFont','"Segoe UI"','Roboto','"Helvetica Neue"','Arial','sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    html, body { background: #f7f4fb; color: #1a1635; }
+    body {
+      background:
+        radial-gradient(ellipse at top left, #e9def5 0%, transparent 55%),
+        radial-gradient(ellipse at bottom right, #dff0e8 0%, transparent 55%),
+        #f7f4fb;
+      min-height: 100vh;
+    }
+    .bg-grid {
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(43,12,85,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(43,12,85,0.05) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse at center, #000 30%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 80%);
+      pointer-events: none; z-index: 0;
+    }
+    .orb {
+      position: fixed; border-radius: 50%;
+      filter: blur(80px); opacity: 0.28; pointer-events: none; z-index: 0;
+      animation: drift 18s ease-in-out infinite;
+    }
+    .orb-1 { width:420px; height:420px; background: radial-gradient(circle,#6A52B3 0%,transparent 70%); top:-120px; left:-80px; }
+    .orb-2 { width:520px; height:520px; background: radial-gradient(circle,#63C19B 0%,transparent 70%); bottom:-160px; right:-120px; animation-delay:-6s; }
+    @keyframes drift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(30px,-20px) scale(1.08); } }
+
+    .card {
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(18px) saturate(140%);
+      -webkit-backdrop-filter: blur(18px) saturate(140%);
+      border: 1px solid rgba(43,12,85,0.08);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(43,12,85,0.08), inset 0 1px 0 rgba(255,255,255,0.9);
+    }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(43,12,85,0.14); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(43,12,85,0.26); }
+
+    .recharts-default-tooltip {
+      background: rgba(255,255,255,0.96) !important;
+      border: 1px solid rgba(43,12,85,0.1) !important;
+      border-radius: 10px !important;
+      color: #1a1635 !important;
+    }
+  </style>
+
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+  <script crossorigin src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+</head>
+<body class="font-sans antialiased overflow-x-hidden">
+  <div class="bg-grid"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div id="root" class="relative z-10"></div>
+
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect, useMemo } = React;
+    const {
+      ResponsiveContainer, BarChart, Bar, LineChart, Line, ReferenceLine,
+      XAxis, YAxis, CartesianGrid, Tooltip, Legend, LabelList, Cell
+    } = Recharts;
+
+    const AUTH_KEY = "vesti.auth.ok";
+    const MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+    const MESES_LONG = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+
+    const fmtNumber = (n) => (n == null ? "—" : new Intl.NumberFormat("pt-BR").format(n));
+    const fmtPct = (n) => (n == null || !isFinite(n) ? "—" : `${n.toFixed(1).replace(".", ",")}%`);
+
+    // dd/mm/aaaa hh:mm:ss  → { y, m, d }
+    function parseLeadDate(str) {
+      if (!str) return null;
+      const m = String(str).match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+      if (!m) return null;
+      return { y: +m[3], m: +m[2], d: +m[1] };
+    }
+
+    // Semana de domingo a sábado. Semana 1 = dia 1 até o primeiro sábado.
+    function weekOfMonth(year, monthIdx, day) {
+      const firstDow = new Date(year, monthIdx, 1).getDay();
+      const firstSatDay = 1 + ((6 - firstDow + 7) % 7);
+      if (day <= firstSatDay) return 1;
+      return 1 + Math.ceil((day - firstSatDay) / 7);
+    }
+    function weeksInMonth(year, monthIdx) {
+      const lastDay = new Date(year, monthIdx + 1, 0).getDate();
+      return weekOfMonth(year, monthIdx, lastDay);
+    }
+    function weekRange(year, monthIdx, weekNum) {
+      const firstDow = new Date(year, monthIdx, 1).getDay();
+      const firstSatDay = 1 + ((6 - firstDow + 7) % 7);
+      const lastDay = new Date(year, monthIdx + 1, 0).getDate();
+      let start, end;
+      if (weekNum === 1) { start = 1; end = Math.min(firstSatDay, lastDay); }
+      else {
+        start = firstSatDay + 1 + (weekNum - 2) * 7;
+        end = Math.min(start + 6, lastDay);
+      }
+      if (start > lastDay) return null;
+      return `${String(start).padStart(2,"0")}–${String(end).padStart(2,"0")}`;
+    }
+
+    function countForMonth(leads, year, month) {
+      let total = 0, pro = 0, starter = 0, quali = 0;
+      for (const l of leads) {
+        const d = parseLeadDate(l.data);
+        if (!d || d.y !== year || d.m !== month) continue;
+        total++;
+        const p = (l.perfil || "").trim().toLowerCase();
+        if (p === "pro") pro++;
+        else if (p === "starter") starter++;
+        else if (p.startsWith("qualificado")) quali++;
+      }
+      return { total, pro, starter, quali, sql: pro + starter + quali };
+    }
+
+    function availableMonths(leads) {
+      const set = new Set();
+      for (const l of leads) {
+        const d = parseLeadDate(l.data);
+        if (d) set.add(`${d.y}-${String(d.m).padStart(2,"0")}`);
+      }
+      return Array.from(set).sort().reverse().map(k => {
+        const [y, m] = k.split("-");
+        return { y: +y, m: +m };
+      });
+    }
+
+    function Header() {
+      const logout = () => {
+        try { sessionStorage.removeItem(AUTH_KEY); } catch (_) {}
+        window.location.replace("login.html");
+      };
+      return (
+        <header className="flex items-center justify-between px-6 lg:px-10 py-5 border-b border-[#2B0C55]/10 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <span className="relative inline-grid place-items-center w-9 h-9">
+              <span className="w-4 h-4 rounded-full"
+                    style={{ background: "linear-gradient(135deg,#6A52B3,#63C19B)",
+                             boxShadow: "0 0 22px rgba(106,82,179,.55), 0 0 40px rgba(99,193,155,.4)" }} />
+            </span>
+            <div className="flex flex-col leading-tight">
+              <span className="text-[17px] font-bold tracking-wide"
+                    style={{ background:"linear-gradient(120deg,#2B0C55 0%,#6A52B3 60%,#549E86 100%)",
+                             WebkitBackgroundClip:"text", backgroundClip:"text", color:"transparent" }}>
+                Vesti
+              </span>
+              <span className="text-[10.5px] uppercase tracking-[1.6px] text-slate-500">Metas · Comparativo</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <a href="index.html"
+               className="inline-flex items-center gap-1.5 text-xs text-slate-700 border border-[#2B0C55]/10 rounded-lg px-3 py-2 hover:text-slate-900 hover:border-brand-pink hover:bg-brand-pink/10 transition"
+               title="Voltar ao dashboard">
+              <svg viewBox="0 0 20 20" width="14" height="14">
+                <path d="M12 5l-5 5 5 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Dashboard
+            </a>
+            <button onClick={logout}
+              className="inline-flex items-center gap-1.5 text-xs text-slate-700 border border-[#2B0C55]/10 rounded-lg px-3 py-2 hover:text-slate-900 hover:border-brand-pink hover:bg-brand-pink/10 transition"
+              title="Encerrar sessão">
+              Sair
+            </button>
+          </div>
+        </header>
+      );
+    }
+
+    function MonthSelector({ months, year, month, onChange }) {
+      const years = Array.from(new Set(months.map(x => x.y))).sort((a,b)=>b-a);
+      const monthsOfYear = months.filter(x => x.y === year).map(x => x.m).sort((a,b)=>a-b);
+      return (
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="text-sm text-slate-600">Mês de referência:</label>
+          <select value={month} onChange={e => onChange(year, +e.target.value)}
+                  className="bg-white/80 border border-[#2B0C55]/10 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-brand-pink">
+            {monthsOfYear.map(m => (
+              <option key={m} value={m}>{MESES_LONG[m-1]}</option>
+            ))}
+          </select>
+          <select value={year} onChange={e => {
+                    const ny = +e.target.value;
+                    const ms = months.filter(x => x.y === ny).map(x => x.m);
+                    onChange(ny, ms.includes(month) ? month : ms[ms.length-1]);
+                  }}
+                  className="bg-white/80 border border-[#2B0C55]/10 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-brand-pink">
+            {years.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </div>
+      );
+    }
+
+    function MetaCard({ label, realizado, meta, unit = "" , tone = "purple"}) {
+      const pct = meta > 0 ? (realizado / meta) * 100 : 0;
+      const ok = pct >= 100;
+      const barBg = ok
+        ? "linear-gradient(90deg, #3E8C6E, #2F6B56)"
+        : "linear-gradient(90deg, #C84A6E, #E48AA3)";
+      return (
+        <div className="card card-gradient-border p-5">
+          <div className="text-[11px] uppercase tracking-[1.4px] text-slate-500 mb-1">{label}</div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-slate-900">{fmtNumber(realizado)}{unit}</span>
+            <span className="text-sm text-slate-500">/ {fmtNumber(meta)}{unit}</span>
+          </div>
+          <div className="mt-3 h-2 rounded-full bg-[#2B0C55]/10 overflow-hidden">
+            <div className="h-full rounded-full transition-all"
+                 style={{ width: `${Math.min(100, pct)}%`, background: barBg }} />
+          </div>
+          <div className="mt-2 flex items-center justify-between text-xs">
+            <span className={ok ? "text-emerald-600 font-semibold" : "font-semibold"}
+                  style={ok ? null : { color: "#C84A6E" }}>
+              {fmtPct(pct)} da meta
+            </span>
+            <span className="text-slate-400">
+              {ok ? "✓ atingido" : `faltam ${fmtNumber(Math.max(0, meta - realizado))}`}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    function CountCard({ label, value, hint }) {
+      return (
+        <div className="card card-gradient-border p-5">
+          <div className="text-[11px] uppercase tracking-[1.4px] text-slate-500 mb-1">{label}</div>
+          <div className="text-3xl font-bold text-slate-900">{fmtNumber(value)}</div>
+          {hint && <div className="mt-2 text-xs text-slate-500">{hint}</div>}
+        </div>
+      );
+    }
+
+    function PctCard({ label, realizadoNum, realizadoDen, metaNum, metaDen, hint }) {
+      const realPct = realizadoDen > 0 ? (realizadoNum / realizadoDen) * 100 : 0;
+      const metaPct = metaDen > 0 ? (metaNum / metaDen) * 100 : 0;
+      const ok = realPct >= metaPct;
+      const ratio = metaPct > 0 ? (realPct / metaPct) * 100 : 0;
+      return (
+        <div className="card card-gradient-border p-5">
+          <div className="text-[11px] uppercase tracking-[1.4px] text-slate-500 mb-1">{label}</div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-slate-900">{fmtPct(realPct)}</span>
+            <span className="text-sm text-slate-500">/ meta {fmtPct(metaPct)}</span>
+          </div>
+          <div className="mt-3 h-2 rounded-full bg-[#2B0C55]/10 overflow-hidden">
+            <div className="h-full rounded-full transition-all"
+                 style={{ width: `${Math.min(100, ratio)}%`,
+                          background: ok
+                            ? "linear-gradient(90deg, #3E8C6E, #2F6B56)"
+                            : "linear-gradient(90deg, #C84A6E, #E48AA3)" }} />
+          </div>
+          <div className="mt-2 text-xs text-slate-500">{hint}</div>
+        </div>
+      );
+    }
+
+    function weeklySeries(leads, year, month, metaMensal, matchFn, seriesKey) {
+      const monthIdx = month - 1;
+      const nWeeks = weeksInMonth(year, monthIdx);
+      const buckets = Array(nWeeks).fill(0);
+      for (const l of leads) {
+        const d = parseLeadDate(l.data);
+        if (!d || d.y !== year || d.m !== month) continue;
+        if (!matchFn(l)) continue;
+        const w = weekOfMonth(year, monthIdx, d.d);
+        if (w >= 1 && w <= nWeeks) buckets[w-1]++;
+      }
+      const metaSemana = metaMensal / nWeeks;
+      return buckets.map((v, i) => ({
+        label: `Sem ${i+1}`,
+        range: weekRange(year, monthIdx, i+1),
+        [seriesKey]: v,
+        Meta: Math.round(metaSemana * 10) / 10,
+      }));
+    }
+
+    function isSqlLead(l) {
+      const p = (l.perfil || "").trim().toLowerCase();
+      return p === "pro" || p === "starter" || p.startsWith("qualificado");
+    }
+    function isProLead(l) {
+      return (l.perfil || "").trim().toLowerCase() === "pro";
+    }
+
+    function WeeklyLineChart({ rows, seriesKey, title, subtitle, mainColor = "#6A52B3", mainColorDark = "#2B0C55" }) {
+      const metaVal = rows && rows.length ? rows[0].Meta : null;
+      return (
+        <div className="card card-gradient-border p-5">
+          <div className="flex items-baseline justify-between mb-3">
+            <div className="text-[11px] uppercase tracking-[1.4px] text-slate-500">{title}</div>
+            <div className="text-[11px] text-slate-400">
+              {subtitle}
+              {metaVal != null && <> · <span className="font-semibold text-emerald-700">meta {fmtNumber(metaVal)}/sem</span></>}
+            </div>
+          </div>
+          <div style={{ width: "100%", height: 360 }}>
+            <ResponsiveContainer>
+              <LineChart data={rows} margin={{ top: 32, right: 24, left: 36, bottom: 24 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(43,12,85,0.08)" />
+                <XAxis dataKey="label" tick={{ fill: "#475569", fontSize: 12 }} padding={{ left: 16, right: 16 }} />
+                <YAxis tick={{ fill: "#475569", fontSize: 12 }} allowDecimals={false}
+                       domain={[0, (dataMax) => Math.max(5, Math.ceil(dataMax * 1.25))]} />
+                <Tooltip
+                  formatter={(v, name) => [fmtNumber(v), name]}
+                  labelFormatter={(lbl, payload) => {
+                    const r = payload && payload[0] && payload[0].payload && payload[0].payload.range;
+                    return r ? `${lbl} (${r})` : lbl;
+                  }}
+                />
+                <Legend wrapperStyle={{ paddingTop: 8 }}
+                        payload={[
+                          { value: seriesKey, type: "line", id: seriesKey, color: mainColor },
+                          { value: "Meta",    type: "plainline", id: "meta", color: "#63C19B",
+                            payload: { strokeDasharray: "6 4" } },
+                        ]} />
+                {metaVal != null && (
+                  <ReferenceLine y={metaVal} stroke="#63C19B" strokeWidth={2} strokeDasharray="6 4"
+                    label={{
+                      value: fmtNumber(metaVal),
+                      position: "left",
+                      offset: 8,
+                      fill: "#2F6B56",
+                      fontSize: 12,
+                      fontWeight: 700,
+                    }} />
+                )}
+                <Line type="monotone" dataKey={seriesKey} stroke={mainColor} strokeWidth={2.5}
+                      dot={{ r: 4, fill: mainColor }} activeDot={{ r: 6 }}>
+                  <LabelList dataKey={seriesKey} position="top" offset={12}
+                             style={{ fill: mainColorDark, fontSize: 11, fontWeight: 700 }} />
+                </Line>
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      );
+    }
+
+    function ComparativoChart({ rows }) {
+      return (
+        <div className="card card-gradient-border p-5">
+          <div className="text-[11px] uppercase tracking-[1.4px] text-slate-500 mb-3">Realizado × Meta</div>
+          <div style={{ width: "100%", height: 340 }}>
+            <ResponsiveContainer>
+              <BarChart data={rows} margin={{ top: 16, right: 16, left: 0, bottom: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(43,12,85,0.08)" />
+                <XAxis dataKey="label" tick={{ fill: "#475569", fontSize: 12 }} />
+                <YAxis tick={{ fill: "#475569", fontSize: 12 }} />
+                <Tooltip formatter={(v) => fmtNumber(v)} />
+                <Legend wrapperStyle={{ paddingTop: 8 }} />
+                <Bar dataKey="Realizado" fill="#6A52B3" radius={[6,6,0,0]}>
+                  <LabelList dataKey="Realizado" position="top" style={{ fill: "#2B0C55", fontSize: 11, fontWeight: 600 }} />
+                </Bar>
+                <Bar dataKey="Meta" fill="#63C19B" radius={[6,6,0,0]}>
+                  <LabelList dataKey="Meta" position="top" style={{ fill: "#2F6B56", fontSize: 11, fontWeight: 600 }} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [leads, setLeads] = useState(null);
+      const [metas, setMetas] = useState(null);
+      const [err, setErr] = useState(null);
+      const [year, setYear] = useState(null);
+      const [month, setMonth] = useState(null);
+
+      useEffect(() => {
+        const bust = `?v=${Date.now()}`;
+        Promise.all([
+          fetch(`data/data.json${bust}`).then(r => r.json()),
+          fetch(`data/metas.json${bust}`).then(r => r.json()),
+        ])
+        .then(([d, m]) => {
+          setLeads(d.leads || []);
+          setMetas(m);
+          const months = availableMonths(d.leads || []);
+          if (months.length) {
+            const today = new Date();
+            const ty = today.getFullYear(), tm = today.getMonth() + 1;
+            const match = months.find(x => x.y === ty && x.m === tm) || months[0];
+            setYear(match.y); setMonth(match.m);
+          }
+        })
+        .catch(e => setErr(String(e)));
+      }, []);
+
+      const months = useMemo(() => leads ? availableMonths(leads) : [], [leads]);
+      const counts = useMemo(() => {
+        if (!leads || year == null || month == null) return null;
+        return countForMonth(leads, year, month);
+      }, [leads, year, month]);
+
+      if (err) return <div className="p-10 text-red-600">Erro: {err}</div>;
+      if (!leads || !metas || !counts) return <div className="p-10 text-slate-500">Carregando…</div>;
+
+      const meta = metas.mensal;
+      const chartRows = [
+        { label: "Total de leads", Realizado: counts.total, Meta: meta.total_leads },
+        { label: "SQL", Realizado: counts.sql, Meta: meta.sql },
+        { label: "Pro", Realizado: counts.pro, Meta: meta.pro },
+        { label: "Starter", Realizado: counts.starter, Meta: meta.starter },
+      ];
+      const weeklySql = weeklySeries(leads, year, month, meta.sql, isSqlLead, "SQL");
+      const weeklyPro = weeklySeries(leads, year, month, meta.pro, isProLead, "Pro");
+
+      return (
+        <>
+          <Header />
+          <main className="max-w-6xl mx-auto px-6 lg:px-10 py-8">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight"
+                    style={{ background:"linear-gradient(120deg,#2B0C55 0%,#6A52B3 60%,#549E86 100%)",
+                             WebkitBackgroundClip:"text", backgroundClip:"text", color:"transparent" }}>
+                  Metas mensais
+                </h1>
+                <p className="text-sm text-slate-500 mt-1">
+                  Comparativo entre o realizado e a meta em {MESES_LONG[month-1]}/{year}.
+                </p>
+              </div>
+              <MonthSelector months={months} year={year} month={month}
+                             onChange={(y, m) => { setYear(y); setMonth(m); }} />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+              <MetaCard label="Total de leads" realizado={counts.total} meta={meta.total_leads} />
+              <MetaCard label="SQL"            realizado={counts.sql}   meta={meta.sql} />
+              <MetaCard label="Leads Pro"      realizado={counts.pro}   meta={meta.pro} />
+              <MetaCard label="Leads Starter"  realizado={counts.starter} meta={meta.starter} />
+              <CountCard label="Qualificados (Sem Faixa)" value={counts.quali}
+                         hint="incluídos no total de SQL" />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2">
+                <ComparativoChart rows={chartRows} />
+              </div>
+              <PctCard label="% Pro sobre SQL"
+                       realizadoNum={counts.pro} realizadoDen={counts.sql}
+                       metaNum={meta.pro}        metaDen={meta.sql}
+                       hint={`${counts.pro} de ${counts.sql} SQLs são Pro`} />
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-4">
+              <WeeklyLineChart rows={weeklySql} seriesKey="SQL"
+                               title="SQLs por semana × meta"
+                               subtitle="meta semanal = meta mensal / nº de semanas" />
+              <WeeklyLineChart rows={weeklyPro} seriesKey="Pro"
+                               title="Pros por semana × meta"
+                               subtitle="meta semanal = meta mensal / nº de semanas" />
+            </div>
+          </main>
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+
+  <style>
+    .card-gradient-border { position: relative; }
+    .card-gradient-border::before {
+      content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px;
+      background: linear-gradient(135deg,#6A52B3,transparent 35%,transparent 65%,#63C19B);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+              mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      pointer-events: none; opacity: 0.45;
+    }
+  </style>
+</body>
+</html>

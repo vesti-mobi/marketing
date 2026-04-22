@@ -203,6 +203,17 @@
               </span>
             )}
           </div>
+          <a href="meta.html"
+            className="relative inline-flex items-center gap-1.5 text-xs font-semibold text-white rounded-lg px-3.5 py-2 shadow-[0_8px_20px_rgba(106,82,179,.35)] hover:shadow-[0_10px_26px_rgba(106,82,179,.5)] hover:-translate-y-0.5 transition"
+            style={{ background: "linear-gradient(120deg,#6A52B3 0%,#8A6DD1 55%,#63C19B 100%)" }}
+            title="Ver metas mensais e trimestrais">
+            <svg viewBox="0 0 20 20" width="14" height="14">
+              <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth="1.8"/>
+              <circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.8"/>
+              <circle cx="10" cy="10" r="1" fill="currentColor"/>
+            </svg>
+            Comparação com metas
+          </a>
           <button onClick={logout}
             className="inline-flex items-center gap-1.5 text-xs text-slate-700 border border-[#2B0C55]/10 rounded-lg px-3 py-2 hover:text-slate-900 hover:border-brand-pink hover:bg-brand-pink/10 transition"
             title="Encerrar sessão">
