@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-04-22T17:17:33.575Z",
+  "generated_at": "2026-04-22T17:39:19.417Z",
   "sheet_id": "1zNRw8zfoASVlO2EhR56sldTCy4IXRCLKfauU1ROChCE",
   "sheet_tab": "Leads",
   "total_leads": 814,
-  "total_sql": 85,
-  "sql_pct": 10.44,
+  "total_sql": 87,
+  "sql_pct": 10.69,
   "perfis": [
     "Pro",
     "Starter",
@@ -26,10 +26,10 @@
     "Qualificação incompleta": 546,
     "Multimarca": 76,
     "Qualificado (Sem Faixa)": 4,
-    "Starter": 62,
+    "Starter": 64,
     "Suporte": 53,
     "Pro": 19,
-    "Em atendimento": 9,
+    "Em atendimento": 7,
     "Desqualificado": 45
   },
   "origem_counts": {
@@ -40,7 +40,7 @@
     "Evento Denim": 467
   },
   "sql_by_origem": {
-    "Site": 52,
+    "Site": 54,
     "Orgânico": 10,
     "Bio Instagram": 5,
     "Evento Denim": 9,
@@ -4100,12 +4100,12 @@
     {
       "data": "22/04/2026 10:04:58",
       "origem": "Site",
-      "perfil": "Em atendimento"
+      "perfil": "Starter"
     },
     {
       "data": "22/04/2026 10:06:43",
       "origem": "Site",
-      "perfil": "Em atendimento"
+      "perfil": "Starter"
     },
     {
       "data": "22/04/2026 11:16:50",
