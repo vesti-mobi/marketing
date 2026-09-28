@@ -296,6 +296,36 @@ def test_insights_spend_whole_number_is_int():
     assert ".0" not in _json.dumps(result["spend"]["A"])
 
 
+def test_fetch_meta_window_skips_metadata_when_disabled():
+    """include_metadata=False NAO chama fetch_meta_ads_metadata (botao ao vivo mais rapido)."""
+    import marketing_data.meta as meta
+    env = {"META_ACCESS_TOKEN": "tok", "META_AD_ACCOUNT_ID": "act_1"}
+    win = {"since": "2026-08-01", "until": "2026-09-28"}
+    insights = {"spend": {}, "impressions": {}, "reach": {}, "new_msg_contacts": {}}
+    with patch.object(meta, "fetch_meta_insights_daily", return_value=insights), \
+         patch.object(meta, "fetch_meta_reach_monthly", return_value={}), \
+         patch.object(meta, "fetch_meta_ads_metadata") as md:
+        out = meta.fetch_meta_window(env, win, include_metadata=False)
+        md.assert_not_called()
+    assert "thumbnails" not in out and "campaigns" not in out
+    assert "spend_daily" in out  # os insights continuam vindo
+
+
+def test_fetch_meta_window_includes_metadata_by_default():
+    """Default (include_metadata=True) chama a metadata — o gerador diario usa isso."""
+    import marketing_data.meta as meta
+    env = {"META_ACCESS_TOKEN": "tok", "META_AD_ACCOUNT_ID": "act_1"}
+    win = {"since": "2026-08-01", "until": "2026-09-28"}
+    insights = {"spend": {}, "impressions": {}, "reach": {}, "new_msg_contacts": {}}
+    md_ret = {"thumbs": {"A": "u"}, "adCampaign": {}, "adAdset": {}, "campaigns": []}
+    with patch.object(meta, "fetch_meta_insights_daily", return_value=insights), \
+         patch.object(meta, "fetch_meta_reach_monthly", return_value={}), \
+         patch.object(meta, "fetch_meta_ads_metadata", return_value=md_ret) as md:
+        out = meta.fetch_meta_window(env, win)
+        md.assert_called_once()
+    assert out["thumbnails"] == {"A": "u"}
+
+
 # ---------------------------------------------------------------------------
 # fetch_meta_window: swallows reach/metadata failures; propagates insights fail
 # ---------------------------------------------------------------------------

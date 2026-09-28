@@ -81,12 +81,14 @@ def _build_live(env: dict) -> dict:
     # 3. Load base snapshot from disk for Meta merge
     base_midia = _load_snapshot_midia_paga()
 
-    # 4. Fetch live Meta (recent window: current month + previous)
+    # 4. Fetch live Meta (recent window: current month + previous).
+    #    include_metadata=False: pula a metadata dos anuncios (thumbs/campanha/adset) p/ ser
+    #    mais rapido no botao ao vivo; o merge mantem a metadata do snapshot diario.
     today = now_iso_date_brt()
     win = recent_window(today, 1)
     live_meta: dict = {}
     try:
-        live_meta = fetch_meta_window(env, win)
+        live_meta = fetch_meta_window(env, win, include_metadata=False)
     except Exception:
         # Meta failed → use only base snapshot (same philosophy as dados.js)
         live_meta = {}

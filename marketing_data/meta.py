@@ -289,12 +289,15 @@ def fetch_meta_ads_metadata(creds: dict) -> dict:
 # Interface de alto nível
 # ---------------------------------------------------------------------------
 
-def fetch_meta_window(env, window: dict) -> dict:
+def fetch_meta_window(env, window: dict, include_metadata: bool = True) -> dict:
     """Monta os campos Meta do midia_paga para a janela {since, until}.
 
     Porta de fetchMetaWindow() do _meta.js.
     - Lança se creds ausentes ou se insights diário falhar.
     - Engole falhas de reach_monthly e metadata (o caller usa base do disco).
+    - include_metadata=False pula a metadata dos anúncios (thumbs/campanha/adset) —
+      usado no refresh ao vivo p/ ser mais rápido (o snapshot diário já tem a metadata,
+      que muda pouco); o merge mantém a metadata da base.
     """
     creds = load_meta_creds(env)
     if not creds:
@@ -322,16 +325,17 @@ def fetch_meta_window(env, window: dict) -> dict:
     except Exception:
         pass  # segue sem reach_monthly; base preenche
 
-    try:
-        meta = with_retry(
-            "metadata",
-            lambda: fetch_meta_ads_metadata(creds),
-        )
-        out["thumbnails"] = meta["thumbs"]
-        out["ad_campaign"] = meta["adCampaign"]
-        out["ad_adset"] = meta["adAdset"]
-        out["campaigns"] = meta["campaigns"]
-    except Exception:
-        pass  # segue sem metadata; base preenche
+    if include_metadata:
+        try:
+            meta = with_retry(
+                "metadata",
+                lambda: fetch_meta_ads_metadata(creds),
+            )
+            out["thumbnails"] = meta["thumbs"]
+            out["ad_campaign"] = meta["adCampaign"]
+            out["ad_adset"] = meta["adAdset"]
+            out["campaigns"] = meta["campaigns"]
+        except Exception:
+            pass  # segue sem metadata; base preenche
 
     return out
