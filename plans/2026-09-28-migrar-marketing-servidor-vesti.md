@@ -528,10 +528,10 @@ if ! git diff --quiet HEAD@{1} HEAD -- package-lock.json 2>/dev/null; then
   npm ci --omit=dev
 fi
 
-echo "[marketing] gerando snapshot (extract.js)…"
+echo "[marketing] gerando snapshot (extract.cjs)…"
 # Carrega os mesmos secrets do serviço.
 set -a; source ~/marketing/secrets/marketing.env; set +a
-node scripts/extract.js
+node scripts/extract.cjs
 
 echo "[marketing] publicando docs/ em /var/www/marketing/…"
 sudo rsync -a --delete docs/ /var/www/marketing/

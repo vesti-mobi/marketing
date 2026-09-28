@@ -41,7 +41,7 @@ jobs:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
-        run: node scripts/extract.js
+        run: node scripts/extract.cjs
 
       - name: Commit updated data.json (if changed)
         run: |

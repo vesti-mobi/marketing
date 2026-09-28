@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "description": "Dashboard interativo de leads de marketing da Vesti",
   "private": true,
+  "type": "module",
   "scripts": {
-    "extract": "node scripts/extract.js",
-    "serve": "npx --yes http-server docs -p 8080 -c-1"
+    "extract": "node scripts/extract.cjs",
+    "serve": "npx --yes http-server docs -p 8080 -c-1",
+    "test": "node --test \"test/*.mjs\""
   },
   "dependencies": {
     "googleapis": "^144.0.0",

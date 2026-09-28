@@ -1,0 +1,19 @@
+[Unit]
+Description=Marketing Dashboard backend (API ao vivo /api/dados)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=allan
+WorkingDirectory=/home/allan/marketing
+EnvironmentFile=/home/allan/marketing/secrets/marketing.env
+Environment=PORT=5002
+Environment=HOST=127.0.0.1
+Environment=SNAPSHOT_PATH=/var/www/marketing/data/data.json
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

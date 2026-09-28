@@ -852,7 +852,7 @@
       if (!hasLiveApi) return;
       setRefreshing(true);
       try {
-        const r = await fetch("/api/dados" + (fresh ? "?fresh=1" : ""), { cache: "no-store" });
+        const r = await fetch("api/dados" + (fresh ? "?fresh=1" : ""), { cache: "no-store" });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         applyJson(await r.json());
         setError(null);
