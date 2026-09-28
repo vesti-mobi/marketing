@@ -3,6 +3,7 @@
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 import { onRequestGet } from './functions/api/dados.js';
 
 const PORT = Number(process.env.PORT) || 5002;
@@ -57,7 +58,8 @@ export function createServer() {
 }
 
 // Sobe o servidor quando executado direto (não durante os testes).
-if (import.meta.url === `file://${process.argv[1]}`) {
+// pathToFileURL normaliza o caminho (Windows/Unix) — comparar strings cruas quebra no Windows.
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   createServer().listen(PORT, HOST, () => {
     console.log(`marketing-backend ouvindo em http://${HOST}:${PORT}`);
   });
