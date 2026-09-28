@@ -242,10 +242,11 @@ def merge_meta_fields(base_midia, live_meta: dict) -> dict:
     elif 'campaigns' in base:
         out['campaigns'] = base['campaigns']
 
-    # spend_window: base covers full history; only use live if no base
-    if 'spend_window' in base and base['spend_window'] is not None:
+    # spend_window: base covers full history; only use live if no base.
+    # Truthy (não "is not None") p/ bater com o JS `if (base.spend_window)` (rejeita 0/vazio).
+    if base.get('spend_window'):
         out['spend_window'] = base['spend_window']
-    elif 'spend_window' in live:
+    elif live.get('spend_window'):
         out['spend_window'] = live['spend_window']
 
     return out
