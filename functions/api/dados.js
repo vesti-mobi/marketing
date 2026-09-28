@@ -36,7 +36,11 @@ async function build(context) {
   });
 
   // 2) Snapshot base (histórico) + janela recente ao vivo da Meta.
-  const base = await fetchBaseSnapshot(request);
+  // No servidor Node, o snapshot é lido do disco via context.readSnapshot;
+  // na Cloudflare (sem readSnapshot), mantém o self-fetch de /data/data.json.
+  const base = context.readSnapshot
+    ? await context.readSnapshot().catch(() => null)
+    : await fetchBaseSnapshot(request);
   const win = recentWindow(nowIsoDateBRT(), 1); // mês corrente + anterior
   let live = {};
   try {
