@@ -8,6 +8,14 @@ import { buildDataFromRows, recentWindow, mergeMetaFields } from './_build.js';
 const TAB = 'LeadsV2';
 const RANGE = 'A:K';
 
+// Resolve o snapshot base: do disco (context.readSnapshot) no servidor Node,
+// ou self-fetch de /data/data.json na Cloudflare. Falha de leitura -> null.
+export async function resolveBase(context) {
+  return context.readSnapshot
+    ? await context.readSnapshot().catch(() => null)
+    : await fetchBaseSnapshot(context.request);
+}
+
 // Lê o snapshot base já publicado (mesma origem). Nunca lança — devolve null se faltar.
 async function fetchBaseSnapshot(request) {
   try {
@@ -36,11 +44,7 @@ async function build(context) {
   });
 
   // 2) Snapshot base (histórico) + janela recente ao vivo da Meta.
-  // No servidor Node, o snapshot é lido do disco via context.readSnapshot;
-  // na Cloudflare (sem readSnapshot), mantém o self-fetch de /data/data.json.
-  const base = context.readSnapshot
-    ? await context.readSnapshot().catch(() => null)
-    : await fetchBaseSnapshot(request);
+  const base = await resolveBase(context);
   const win = recentWindow(nowIsoDateBRT(), 1); // mês corrente + anterior
   let live = {};
   try {

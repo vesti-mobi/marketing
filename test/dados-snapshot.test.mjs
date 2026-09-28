@@ -15,6 +15,8 @@
 //        (esse é o caminho completo do readSnapshot: base?.midia_paga → merge → output).
 //   T4 — degradação silenciosa: readSnapshot que lança não derruba build()
 //        (o .catch(() => null) está presente e funciona — verificado via stack completo).
+//   T5 — resolveBase resolve: readSnapshot que resolve devolve o objeto exato (sem rede).
+//   T6 — resolveBase rejeita → null: executa .catch(() => null) diretamente (sem rede).
 //
 // O path de integração end-to-end (readSnapshot retorna dados → aparecem na resposta JSON)
 // é coberto no Task 3, onde readSheetRows é fornecido com creds reais no servidor Node.
@@ -35,7 +37,7 @@ const ENV_NO_CREDS = {
   META_AD_ACCOUNT_ID: undefined,
 };
 
-const { onRequestGet } = await import('../functions/api/dados.js');
+const { onRequestGet, resolveBase } = await import('../functions/api/dados.js');
 
 // ── Teste 1: módulo exporta onRequestGet ──────────────────────────────────────
 test('módulo exporta onRequestGet como função', () => {
@@ -98,4 +100,21 @@ test('falha em readSnapshot não derruba build (degrada silenciosamente)', async
   }
   // Pode ser 502/503 (sem creds Google) mas nunca uma exceção não capturada.
   assert.ok(resp instanceof Response, 'deve devolver uma Response');
+});
+
+// ── Teste 5: resolveBase devolve o snapshot quando readSnapshot resolve ────────
+// Executa o branch `context.readSnapshot` de resolveBase diretamente (sem rede,
+// sem creds) — confirma que o objeto retornado por readSnapshot chega intacto.
+test('resolveBase devolve o snapshot quando readSnapshot resolve', async () => {
+  const base = { midia_paga: { x: 1 } };
+  const ctx = { readSnapshot: async () => base };
+  assert.equal(await resolveBase(ctx), base);
+});
+
+// ── Teste 6: resolveBase devolve null quando readSnapshot rejeita (.catch) ────
+// Prova que .catch(() => null) é executado quando readSnapshot lança — o único
+// teste que realmente percorre esse code path (T4 tem withCache na frente).
+test('resolveBase devolve null quando readSnapshot rejeita (.catch)', async () => {
+  const ctx = { readSnapshot: async () => { throw new Error('disco falhou'); } };
+  assert.equal(await resolveBase(ctx), null);
 });
