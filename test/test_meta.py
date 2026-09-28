@@ -254,8 +254,8 @@ def test_insights_daily_pagination_stops_at_50():
     with patch("marketing_data.meta.requests.get", _make_requests_mock(pages)):
         result = fetch_meta_insights_daily(creds, "2026-09-01", "2026-09-30")
 
-    # Should have fetched exactly 50 pages (index 0..49)
-    assert len(result["spend"]) == 50
+    # JS guard e `pages > 50` -> busca ate a 51a pagina (paridade com _meta.js)
+    assert len(result["spend"]) == 51
 
 
 # ---------------------------------------------------------------------------
@@ -279,7 +279,7 @@ def test_reach_monthly_pagination_stops_at_20():
     with patch("marketing_data.meta.requests.get", _make_requests_mock(pages)):
         result = fetch_meta_reach_monthly(creds, "2026-09-01", "2026-09-30")
 
-    assert len(result) == 20
+    assert len(result) == 21
 
 
 # ---------------------------------------------------------------------------

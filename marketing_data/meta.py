@@ -161,7 +161,7 @@ def fetch_meta_insights_daily(creds: dict, since: str, until: str) -> dict:
             paging = j.get("paging") or {}
             url = paging.get("next")
             # Usar params=None nas páginas seguintes (url já tem todos os params)
-            if pages >= 50:
+            if pages > 50:
                 break
 
     return {
@@ -204,7 +204,7 @@ def fetch_meta_reach_monthly(creds: dict, since: str, until: str) -> dict:
             pages += 1
             paging = j.get("paging") or {}
             url = paging.get("next")
-            if pages >= 20:
+            if pages > 20:
                 break
 
     return reach_monthly
@@ -268,7 +268,7 @@ def fetch_meta_ads_metadata(creds: dict) -> dict:
         pages += 1
         paging = j.get("paging") or {}
         url = paging.get("next")
-        if pages >= 50:
+        if pages > 50:
             break
 
     return {
