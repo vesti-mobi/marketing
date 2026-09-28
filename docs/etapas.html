@@ -1057,7 +1057,7 @@
       const [refreshedAt, setRefreshedAt] = useState(null);
 
       // Detecta se estamos na Cloudflare Pages ou localhost (tem /api ao vivo).
-      const hasLiveApi = /(^|\.)pages\.dev\.?$/.test(location.hostname) || location.hostname.replace(/\.$/, "") === "localhost";
+      const hasLiveApi = /(^|\.)pages\.dev\.?$/.test(location.hostname) || location.hostname.replace(/\.$/, "") === "localhost" || location.hostname.replace(/\.$/, "") === "bi.vesti.com.br";
 
       // Snapshot estático (data/data.json): primeiro paint rápido, quase nunca falha.
       const loadSnapshot = React.useCallback(async () => {

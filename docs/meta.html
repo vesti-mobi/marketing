@@ -499,7 +499,7 @@
       const [refreshedAt, setRefreshedAt] = useState(null);
 
       // Detecta se estamos na Cloudflare Pages ou localhost (tem /api ao vivo).
-      const hasLiveApi = /(^|\.)pages\.dev\.?$/.test(location.hostname) || location.hostname.replace(/\.$/, "") === "localhost";
+      const hasLiveApi = /(^|\.)pages\.dev\.?$/.test(location.hostname) || location.hostname.replace(/\.$/, "") === "localhost" || location.hostname.replace(/\.$/, "") === "bi.vesti.com.br";
 
       // Aplica o payload (leads filtrados + metas). `initial` só na 1ª carga (snapshot),
       // para auto-selecionar o mês corrente; nas atualizações de background não mexe na
