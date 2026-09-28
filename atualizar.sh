@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Atualiza o painel de Marketing no servidor: pull + snapshot + publica.
 set -euo pipefail
-cd "$(dirname "$0")"
+# Vai pra pasta do script (robusto a symlink e a chamada de qualquer diretório).
+cd "$(dirname "$(readlink -f "$0")")"
 
 echo "[marketing] git pull…"
 git pull --ff-only
@@ -14,7 +15,7 @@ fi
 
 echo "[marketing] gerando snapshot (extract.cjs)…"
 # Carrega os mesmos secrets do serviço.
-set -a; source ~/marketing/secrets/marketing.env; set +a
+set -a; source secrets/marketing.env; set +a
 node scripts/extract.cjs
 
 echo "[marketing] publicando docs/ em /var/www/marketing/…"
