@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "extract": "node scripts/extract.js",
+    "extract": "node scripts/extract.cjs",
     "serve": "npx --yes http-server docs -p 8080 -c-1",
     "test": "node --test \"test/*.mjs\""
   },
