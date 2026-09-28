@@ -12,3 +12,8 @@ Thumbs.db
 .idea/
 .dev.vars
 .superpowers/
+
+# Secrets do deploy no servidor (nunca versionar)
+secrets/
+marketing.env
+sa.json
