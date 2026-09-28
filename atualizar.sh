@@ -5,6 +5,9 @@ set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")"
 
 echo "[marketing] git pull…"
+# O data.json e' gerado localmente (arquivo versionado); restaura antes do pull p/ nao
+# conflitar com o data.json que a GitHub Action commita no repo.
+git checkout -- docs/data/data.json 2>/dev/null || true
 git pull --ff-only
 
 echo "[marketing] venv + deps…"
@@ -18,6 +21,8 @@ set -a; source secrets/marketing.env; set +a
 python gerar_marketing.py --out docs/data/data.json
 
 echo "[marketing] publicando docs/ em /var/www/marketing/…"
-sudo rsync -a --delete docs/ /var/www/marketing/
+# /var/www/marketing e' do allan (chown allan:allan), entao NAO precisa de sudo
+# — essencial p/ o cron (que nao tem tty p/ senha).
+rsync -a --delete docs/ /var/www/marketing/
 
 echo "[marketing] OK ($(date '+%Y-%m-%d %H:%M:%S'))"
