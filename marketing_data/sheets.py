@@ -79,5 +79,6 @@ def read_sheet_rows(env, *, tab: str, rng: str = "A:K") -> list[list[str]]:
     )
 
     values = result.get("values") or []
-    # Coerce cada célula para string, None → '' (igual ao .map(c => String(c == null ? '' : c)) do JS)
-    return [[str(c or "") for c in row] for row in values]
+    # Coerce cada célula para string; SÓ None → '' (igual ao JS String(c == null ? '' : c);
+    # str(c or "") transformaria 0/False em '' indevidamente).
+    return [[("" if c is None else str(c)) for c in row] for row in values]

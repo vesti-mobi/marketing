@@ -34,6 +34,12 @@ _AD_EFFECTIVE_STATUSES = [
 # Helpers puros
 # ---------------------------------------------------------------------------
 
+def _js_num(x):
+    """Replica JS `+(x.toFixed(2))`: 2 casas; inteiro serializa como int (JSON `0`, nao `0.0`)."""
+    r = round(x, 2)
+    return int(r) if r == int(r) else r
+
+
 def month_windows(since: str, until: str) -> list[dict]:
     """Lista de janelas {ym, since, until} por mês calendário entre since e until.
 
@@ -153,7 +159,7 @@ def fetch_meta_insights_daily(creds: dict, since: str, until: str) -> dict:
                     None,
                 )
                 new_contacts = int(action["value"]) if action else 0
-                spend.setdefault(ad, {})[day] = round(float(row.get("spend") or 0), 2)
+                spend.setdefault(ad, {})[day] = _js_num(float(row.get("spend") or 0))
                 impressions.setdefault(ad, {})[day] = int(row.get("impressions") or 0)
                 reach.setdefault(ad, {})[day] = int(row.get("reach") or 0)
                 new_msg_contacts.setdefault(ad, {})[day] = new_contacts

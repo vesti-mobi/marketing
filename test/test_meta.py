@@ -282,6 +282,20 @@ def test_reach_monthly_pagination_stops_at_20():
     assert len(result) == 21
 
 
+def test_insights_spend_whole_number_is_int():
+    """spend inteiro serializa como int (JSON `1`, nao `1.0`) - paridade com JS toFixed."""
+    from marketing_data.meta import fetch_meta_insights_daily
+    import json as _json
+    creds = {"token": "tok", "acct": "act_123"}
+    pages = [{"data": [{"ad_name": "A", "date_start": "2026-09-01",
+                        "spend": "1.00", "impressions": "10", "reach": "8", "actions": []}],
+              "paging": {}}]
+    with patch("marketing_data.meta.requests.get", _make_requests_mock(pages)):
+        result = fetch_meta_insights_daily(creds, "2026-09-01", "2026-09-30")
+    assert result["spend"]["A"]["2026-09-01"] == 1
+    assert ".0" not in _json.dumps(result["spend"]["A"])
+
+
 # ---------------------------------------------------------------------------
 # fetch_meta_window: swallows reach/metadata failures; propagates insights fail
 # ---------------------------------------------------------------------------
